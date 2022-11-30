@@ -21,6 +21,9 @@ class Board:
         # keep track of uncovered locations
         self.dug = set()
 
+        # keep track of marked bombs
+        self.marked = set()
+
     def make_new_board(self):
         board = [[None for _ in range(self.dim_size)] for _ in range(self.dim_size)]
 
@@ -71,6 +74,9 @@ class Board:
                 self.dig(r, c)
         
         return True
+    
+    def mark_bomb(self, row, col):
+        self.marked.add((row, col))
 
     def draw_board(self, game_over):
         bombs_found = 0
@@ -92,6 +98,9 @@ class Board:
                         x_margin = (self.square_size - 1 - num_image.get_width())//2
                         y_margin = (self.square_size - 1 - num_image.get_height())//2
                         self.screen.blit(num_image, (c*self.square_size + 2 + x_margin, r*self.square_size + 2 + y_margin))
+                elif (r, c) in self.marked:
+                    pygame.draw.rect(self.screen, (255, 99, 71), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
+                    pygame.draw.rect(self.screen, (0, 0, 0), (c*self.square_size, r*self.square_size, self.square_size, self.square_size), width = 1)
                 else:
                     pygame.draw.rect(self.screen, (200, 200, 200), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
                     pygame.draw.rect(self.screen, (100, 100, 100), (c*self.square_size, r*self.square_size, self.square_size, self.square_size), width = 1)
@@ -109,6 +118,8 @@ class Board:
 
 def play(dim_size = 10, num_bombs = 10):
     pygame.init()
+    LEFT = 1
+    RIGHT = 3
     font = pygame.font.SysFont(None, 24)
     board = Board(dim_size, num_bombs, font)
     safe = True
@@ -121,19 +132,23 @@ def play(dim_size = 10, num_bombs = 10):
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if len(board.dug) < board.dim_size ** 2 - num_bombs:
-                    x_pos = event.pos[0]
-                    y_pos = event.pos[1]
-                    col = int(math.floor(x_pos/board.square_size))
-                    row = int(math.floor(y_pos/board.square_size))
-                    safe = board.dig(row, col)
-                    if not safe:
-                        game_over = True
-                    if len(board.dug) == board.dim_size ** 2 - num_bombs:
-                        board.draw_board(game_over = True)
-                        game_over = True
-                    else:
-                        board.draw_board(game_over)
+                x_pos = event.pos[0]
+                y_pos = event.pos[1]
+                col = int(math.floor(x_pos/board.square_size))
+                row = int(math.floor(y_pos/board.square_size))
+                if event.button == 1:
+                    if len(board.dug) < board.dim_size ** 2 - num_bombs:
+                        safe = board.dig(row, col)
+                        if not safe:
+                            game_over = True
+                        if len(board.dug) == board.dim_size ** 2 - num_bombs:
+                            board.draw_board(game_over = True)
+                            game_over = True
+                        else:
+                            board.draw_board(game_over)
+                if event.button == 3:
+                    board.mark_bomb(row, col)
+                    board.draw_board(game_over)
                 if game_over:
                     pygame.time.wait(3000)
 
