@@ -72,23 +72,37 @@ class Board:
         
         return True
 
-    def draw_board(self):
+    def draw_board(self, game_over):
+        bombs_found = 0
         for c in range(self.dim_size):
             for r in range(self.dim_size):
                 if (r, c) in self.dug:
                     if self.board[r][c] == "*":
                         pygame.draw.rect(self.screen, (220, 0, 0), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
+                        pygame.draw.rect(self.screen, (0, 0, 0), (c*self.square_size, r*self.square_size, self.square_size, self.square_size), width = 1)
+                        bombs_found = 1
                     elif self.board[r][c] == 0:
                         pygame.draw.rect(self.screen, (255, 255, 255), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
+                        pygame.draw.rect(self.screen, (100, 100, 100), (c*self.square_size, r*self.square_size, self.square_size, self.square_size), width = 1)
                     elif self.board[r][c] > 0:
                         pygame.draw.rect(self.screen, (255, 255, 255), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
+                        pygame.draw.rect(self.screen, (0, 0, 0), (c*self.square_size, r*self.square_size, self.square_size, self.square_size), width = 1)
                         num_text = str(self.board[r][c])
                         num_image = self.font.render(num_text, True, (0, 0, 0), (255, 255, 255))
                         x_margin = (self.square_size - 1 - num_image.get_width())//2
                         y_margin = (self.square_size - 1 - num_image.get_height())//2
                         self.screen.blit(num_image, (c*self.square_size + 2 + x_margin, r*self.square_size + 2 + y_margin))
                 else:
-                    pygame.draw.rect(self.screen, (0, 0, 0), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
+                    pygame.draw.rect(self.screen, (200, 200, 200), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
+                    pygame.draw.rect(self.screen, (100, 100, 100), (c*self.square_size, r*self.square_size, self.square_size, self.square_size), width = 1)
+        if game_over is True:
+            if bombs_found == 0:
+                for c in range(self.dim_size):
+                    for r in range(self.dim_size):
+                            if self.board[r][c] == "*":
+                                pygame.draw.rect(self.screen, (0, 220, 0), (c*self.square_size, r*self.square_size, self.square_size, self.square_size))
+                                pygame.draw.rect(self.screen, (100, 100, 100), (c*self.square_size, r*self.square_size, self.square_size, self.square_size), width = 1)
+
         
         pygame.display.update()
 
@@ -98,8 +112,8 @@ def play(dim_size = 10, num_bombs = 10):
     font = pygame.font.SysFont(None, 24)
     board = Board(dim_size, num_bombs, font)
     safe = True
-    board.draw_board()
     game_over = False
+    board.draw_board(game_over)
 
     while not game_over:
         for event in pygame.event.get():
@@ -115,7 +129,13 @@ def play(dim_size = 10, num_bombs = 10):
                     safe = board.dig(row, col)
                     if not safe:
                         game_over = True
-                board.draw_board()
+                    if len(board.dug) == board.dim_size ** 2 - num_bombs:
+                        board.draw_board(game_over = True)
+                        game_over = True
+                    else:
+                        board.draw_board(game_over)
+                if game_over:
+                    pygame.time.wait(3000)
 
 if __name__ == "__main__":
     play()
